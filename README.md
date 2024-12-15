@@ -45,6 +45,6 @@ The project is designed to monitor network traffic and identify cyberattacks in 
 - **`models.ipynb`**: Contains every trained models and results.
 
 ### 5. Documentation
-- **`LAB_II.pdf`**: Research documentation detailing methods and results.
+- **`NID_report.pdf`**: Research documentation detailing methods and results.
 
 ---
