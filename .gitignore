@@ -1,0 +1,7 @@
+# CSV fájlok figyelmen kívül hagyása
+*.csv
+*pcap
+
+# models mappa és annak teljes tartalma
+/models/
+/gui/model
