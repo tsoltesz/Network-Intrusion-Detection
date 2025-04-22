@@ -13,6 +13,7 @@ import xgboost as xgb
 import pandas as pd
 import datetime
 import csv
+from plyer import notification
 
 # LightGBM importálása
 import lightgbm as lgb
@@ -85,6 +86,7 @@ THEMES = {
         "sel_fg": "#000000",
         "btn_sel": "#E2E2E2",
         "warning": "#FFCCCC",
+        "normal_button": "#D0E7FF",
     },
     "dark": {
         "bg": "#202124",
@@ -98,6 +100,7 @@ THEMES = {
         "sel_fg": "#E8EAED",
         "btn_sel": "#3A3B3D",
         "warning": "#FF0000",
+        "normal_button": "#1E4F8F",
     },
 }
 
@@ -132,7 +135,10 @@ TRANSLATIONS = {
         "no":  "Nem",
         "help": "Súgó",
         "help_text": "Ez az alkalmazás valós időben figyeli a hálózati forgalmat, és jelzi, ha az adott gépet támadás éri. A megfigyelést a START gombbal indíthatod el, majd egy táblázatban követheted nyomon a bejövő és kimenő csomagokat. Gyanús vagy hibás csomag esetén a sor piros színnel emelkedik ki, az állapotsor pedig megjeleníti az utolsó észlelt támadás időpontját. A figyelés leállításához nyomd meg a STOP gombot.\n A Beállítások menüben kiválaszthatod a megjelenési témát és a program nyelvét, továbbá azt is, hogy melyik gépi tanulási modell alapján történjen a támadások osztályozása. A rendszer emellett minden forgalmi adatot és a hozzájuk tartozó támadási címkéket egy naplófájlba is elmenti.",
-    
+        "quit":"Kilépés",
+        "display": "Megjelenítés",
+        "t_light": "Világos",
+        "t_dark": "Sötét",
     },
     "en": {
         "time":"Timestamp",
@@ -164,6 +170,10 @@ TRANSLATIONS = {
         "no":  "No",
         "help": "Help",
         "help_text": "This application monitors network traffic in real time and notifies you if your machine is under attack. Monitoring begins when you press the START button, and you can then track incoming and outgoing packets in a table. Suspicious or malformed packets are highlighted in red, and the status bar displays the time of the last detected attack. To stop monitoring, press the STOP button.\nIn the Settings menu, you can choose the display theme and program language, as well as which machine learning model will be used for attack classification. The system also saves all traffic data and their associated attack labels to a log file.",
+        "quit":"Quit",
+        "display": "Display",
+        "t_light": "Light",
+        "t_dark": "Dark",
     },
     "de": {
         "time": "Zeitstempel",                    # Timestamp
@@ -194,7 +204,10 @@ TRANSLATIONS = {
         "no":  "Nein",
         "help": "Helfen",
         "help_text": "Diese Anwendung überwacht den Netzwerkverkehr in Echtzeit und informiert Sie, wenn Ihr Computer angegriffen wird. Die Überwachung beginnt, wenn Sie die START-Schaltfläche drücken, und Sie können eingehende und ausgehende Pakete in einer Tabelle verfolgen. Verdächtige oder fehlerhafte Pakete werden rot hervorgehoben, und die Statusleiste zeigt den Zeitpunkt des zuletzt erkannten Angriffs an. Um die Überwachung zu beenden, drücken Sie die STOP-Schaltfläche.\nIm Einstellungsmenü können Sie das Anzeige‑Thema und die Programmsprache auswählen sowie festlegen, welches Machine‑Learning‑Modell für die Angriffserkennung verwendet werden soll. Das System speichert außerdem alle Verkehrsdaten und deren zugehörige Angriffskennzeichnungen in einer Protokolldatei.",
-
+        "quit":"Aufhören",
+        "display": "Anzeige",
+        "t_light": "Licht",
+        "t_dark": "Dunkel",
        
     },
 }
@@ -211,7 +224,7 @@ HELP_ICON_DARK  = ICON_DIR / "help_logo_dark.png"
 PLAY_ICON  = ICON_DIR / "play.png"
 STOP_ICON  = ICON_DIR / "stop.png"
 APP_ICON   = ICON_DIR / "logo.png"
-TRAY_ICON  = ICON_DIR / "logo.png"
+TRAY_ICON  = ICON_DIR / "logo.ico"
 LOGO_ICON_ICO = ICON_DIR / "logo.ico"
 FLAG_ICONS = {c: ICON_DIR / f"flag_{c}.png" for c in ("hu", "en", "de")}
 
@@ -318,8 +331,8 @@ class ToggleButton(ttk.Frame):
         super().__init__(master, **kw)
         self._          = translate
         self.is_running = False
-        self.play       = load_img(PLAY_ICON, (16, 16))
-        self.stop       = load_img(STOP_ICON, (16, 16))
+        self.play       = load_img(PLAY_ICON, (30, 30))
+        self.stop       = load_img(STOP_ICON, (30, 30))
         self.btn        = ttk.Button(self, command=self.toggle)
         self.btn.pack(fill="both", expand=True)
         self._update()
@@ -391,6 +404,8 @@ class InspectorApp:
         self.root.protocol("WM_DELETE_WINDOW", self._on_close)
         self.root.after(100, self._process_queue)
 
+        self.is_hidden = False
+
     # ---------- translation helpers ----------
     def _(self, k): return TRANSLATIONS[self.language][k]
 
@@ -447,6 +462,8 @@ class InspectorApp:
         self.style.configure("Start.TButton", font=("Segoe UI", 10, "bold"))
         self.style.configure("Stop.TButton",  font=("Segoe UI", 10, "bold"))
         self.style.configure("Tool.TButton",  relief="flat", borderwidth=0)
+        self.style.configure("BgBtn.TButton", font=("Segoe UI", 10, "bold"))
+
 
     def _apply_theme(self):
         t = THEMES[self.theme]
@@ -490,6 +507,14 @@ class InspectorApp:
         self.style.map("ActiveLang.TButton",
                        background=[("pressed", t["btn_sel"]),
                                    ("active",  t["btn_sel"])])
+
+        self.style.map("Normal.TButton",
+                       background=[("pressed", t["normal_button"]),
+                                   ("active",  t["normal_button"])])
+
+        self.style.map("BgBtn.TButton",
+                       background=[("pressed", t["normal_button"]),
+                                   ("active",  t["normal_button"])])
 
         if sys.platform == "win32":
             set_win_titlebar_dark(self.root.winfo_id(), self.theme == "dark")
@@ -579,8 +604,8 @@ class InspectorApp:
         self.toggle_btn.pack(side="left", pady=10)
         self.toggle_btn.bind("<<Toggle>>", self._handle_toggle)
 
-        self.bg_btn = ttk.Button(bottom, command=self._minimize_to_tray)
-        self.bg_btn.pack(side="left", padx=10)
+        self.bg_btn = ttk.Button(bottom, command=self._minimize_to_tray, style="BgBtn.TButton")
+        self.bg_btn.pack(side="left", padx=10, ipady=8)
 
         status = ttk.Frame(self.root, style="Status.TFrame"); status.pack(fill="x")
         self.status_lbl = ttk.Label(status)
@@ -655,6 +680,15 @@ class InspectorApp:
                         row = list(rec)  # tuple → list, ha nem az
                         row.append("attack" if int(prediction[0]) == 0 else "normal")
                         writer.writerow(row)
+
+                    if int(prediction[0]) == 0 and self.is_hidden:
+                        notification.notify(
+                            title=self._("status_attack"),               # fordításban legyen "Támadás észlelve!"
+                            message=f"{rec[0]}: {rec[1]} → {rec[2]}",       # src → dst, proto
+                            app_name=self._("app_name"),
+                            timeout=5                                      # másodpercben
+                        )
+                        self.is_hidden=False
                     
         except queue.Empty:
             pass
@@ -664,23 +698,54 @@ class InspectorApp:
             self.root.after(100, self._process_queue)
 
 
+    def _restore_window(self):
+        # Bezárjuk a tálca‑ikont és előhozzuk az ablakot
+        if hasattr(self, 'tray'):
+            self.tray.stop()
+        self.root.deiconify()
+        self.is_hidden = False
+
+    def _quit_from_tray(self):
+        # Leállítjuk a tálca‑ikont, majd meghívjuk a szokásos bezárási logikát
+        if hasattr(self, 'tray'):
+            self.tray.stop()
+        self._on_close()
+
+
     # ---------- tray ----------
     def _minimize_to_tray(self):
         if not pystray:
             messagebox.showwarning("Pystray", self._("pystray_message"))
             return
         self.root.withdraw()
+        self.is_hidden = True
         ico = Image.open(TRAY_ICON) if Image and TRAY_ICON.exists() else None
+
+        def _on_left_click(icon, item):
+            # ikon leállítása, majd ablak visszaállítása
+            icon.stop()
+            self.root.after(0, self._restore_window)
+
         self.tray = pystray.Icon(
-            "Inspector", ico, "Inspector",
+            self._("app_name"), ico, self._("app_name"),
             menu=pystray.Menu(
                 pystray.MenuItem(
+                    self._("display"),
+                    lambda *_: self.root.after(0, self._restore_window),
+                ),
+                pystray.MenuItem(
+                    self._("help"),
+                    lambda *_: self.root.after(0, self._open_help),
+                ),
+                pystray.MenuItem(
                     self._("settings"),
+                    #lambda *_: self.root.after(0, self.root.quit),
                     lambda *_: self.root.after(0, self._open_settings),
                 ),
                 pystray.MenuItem(
-                    "Quit",
-                    lambda *_: self.root.after(0, self.root.quit),
+                    self._("quit"),
+                    #lambda *_: self.root.after(0, self.root.quit),
+                    lambda *_: self.root.after(0, self._quit_from_tray),
                 ),
             ),
         )
@@ -688,6 +753,7 @@ class InspectorApp:
 
     # ---------- close ----------
     def _on_close(self):
+        self._restore_window()
         if self.toggle_btn.is_running:
             # ha fut a sniff, kérdezz rá a kilépésre
             title   = self._('app_name')
@@ -803,8 +869,12 @@ class HelpWindow(tk.Toplevel):
         frm.pack(padx=20, pady=20, fill="both", expand=True)
 
         # help.jpg betöltése (például 32×32 px)
-        icon_path = ICON_DIR / "help.jpg"
-        img = load_img(icon_path, (32, 32))
+        if self.app.theme == "dark":
+            icon_path = HELP_ICON_DARK
+        elif self.app.theme == "light":
+            icon_path = HELP_ICON_LIGHT
+        
+        img = load_img(icon_path, (80, 100))
         if img:
             lbl_icon = ttk.Label(frm, image=img, background=t["bg"])
             lbl_icon.image = img
@@ -824,10 +894,10 @@ class HelpWindow(tk.Toplevel):
         # végén, a pack() hívások után:
         self.update_idletasks()  # frissíti az ablak méreteit
         # kiszámoljuk a középre pozíciót a főablakhoz képest
-        px = app.root.winfo_rootx()
-        py = app.root.winfo_rooty()
-        pw = app.root.winfo_width()
-        ph = app.root.winfo_height()
+        px = self.app.root.winfo_rootx()
+        py = self.app.root.winfo_rooty()
+        pw = self.app.root.winfo_width()
+        ph = self.app.root.winfo_height()
         ww = self.winfo_width()
         wh = self.winfo_height()
         x = px + (pw - ww) // 2
@@ -868,9 +938,12 @@ class SettingsWindow(tk.Toplevel):
         self.label_theme = ttk.Label(self)
         self.label_theme.grid(row=0, column=0, sticky="w", padx=10, pady=(10, 0))
         tf = ttk.Frame(self); tf.grid(row=1, column=0, sticky="w", padx=10)
-        for key, txt in (("light", "Light"), ("dark", "Dark")):
-            ttk.Radiobutton(tf, text=txt, variable=self.theme_var,
-                            value=key).pack(side="left", padx=4)
+
+        self.theme_buttons = {}
+        for key, txt in (("light", self.app._('t_light')), ("dark", self.app._('t_dark'))):
+            rb = ttk.Radiobutton(tf, text=txt, variable=self.theme_var, value=key)
+            rb.pack(side="left", padx=4)
+            self.theme_buttons[key] = rb
 
         # Language
         self.label_lang = ttk.Label(self)
@@ -894,8 +967,20 @@ class SettingsWindow(tk.Toplevel):
                                                        sticky="w", padx=10)
 
         # Save
-        self.btn_save = ttk.Button(self, command=self._save)
+        self.btn_save = ttk.Button(self, command=self._save, style="Normal.TButton")
         self.btn_save.grid(row=6, column=0, sticky="e", padx=10, pady=10)
+
+        self.update_idletasks()  # frissíti az ablak méreteit
+        # kiszámoljuk a középre pozíciót a főablakhoz képest
+        px = self.app.root.winfo_rootx()
+        py = self.app.root.winfo_rooty()
+        pw = self.app.root.winfo_width()
+        ph = self.app.root.winfo_height()
+        ww = self.winfo_width()
+        wh = self.winfo_height()
+        x = px + (pw - ww) // 2
+        y = py + (ph - wh) // 2
+        self.geometry(f"+{x}+{y}")
 
     # ----- instant preview -----
     def _instant_theme(self, *_):
@@ -926,6 +1011,11 @@ class SettingsWindow(tk.Toplevel):
             active = code == self.lang_var.get()
             btn.state(["pressed"] if active else ["!pressed"])
             btn.configure(style="ActiveLang.TButton" if active else "Tool.TButton")
+
+        for key, rb in self.theme_buttons.items():
+            rb.config(text=_(f"t_{key}"))
+        
+        
 
     # ----- save -----
     def _save(self):
