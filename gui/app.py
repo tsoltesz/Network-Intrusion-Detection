@@ -701,7 +701,8 @@ class InspectorApp:
                         toast = Notification(
                             app_id=self._("app_name"),                     # tetszőleges AppID
                             title=self._("status_attack"),                # fejléc
-                            msg=f"{rec[0]}: {rec[1]} → {rec[2]}",  
+                            msg=f"{rec[0]}: {rec[1]} → {rec[2]}",
+                            icon=str((LOGO_ICON_ICO).resolve()) 
                 
                         )
                         # opcionális hang beállítása
