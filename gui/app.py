@@ -920,9 +920,6 @@ class SettingsWindow(tk.Toplevel):
         self.transient(app.root)
         self.resizable(False, False)
 
-        self.style = ttk.Style(self)
-        self.style.theme_use('default') 
-
         self.theme_var = tk.StringVar(value=app.theme)
         self.lang_var  = tk.StringVar(value=app.language)
         self.model_var = tk.StringVar(value=app.MODEL_FILE)
@@ -965,9 +962,9 @@ class SettingsWindow(tk.Toplevel):
         # Model
         self.label_model = ttk.Label(self)
         self.label_model.grid(row=4, column=0, sticky="w", padx=10, pady=(10, 0))
-        self.combobox = ttk.Combobox(self, values=self.app.MODELS, state="readonly",
-                     textvariable=self.model_var,style="Settings.TCombobox")
-        self.combobox.grid(row=5, column=0,sticky="w", padx=10)
+        ttk.Combobox(self, values=self.app.MODELS, state="readonly",
+                     textvariable=self.model_var).grid(row=5, column=0,
+                                                       sticky="w", padx=10)
 
         # Save
         self.btn_save = ttk.Button(self, command=self._save, style="Normal.TButton")
@@ -1002,19 +999,6 @@ class SettingsWindow(tk.Toplevel):
     def _sync_theme(self):
         t = THEMES[self.app.theme]
         self.configure(bg=t["bg"])
-
-        self.style.configure(
-        "Settings.TCombobox",
-        fieldbackground=t["bg"],   # a beviteli mező háttere
-        background=t["bg"],        # a lehulló lista háttere
-        foreground=t["fg"]         # a szöveg színe
-        )
-        # (ha kell, map‑old is a disabled/active állapotokat):
-        self.style.map(
-            "Settings.TCombobox",
-            fieldbackground=[('disabled', t["bg"]), ('readonly', t["bg"])],
-            background=[('disabled', t["bg"]), ('readonly', t["bg"])]
-        )
 
     def _sync_lang(self):
         _ = self.app._
