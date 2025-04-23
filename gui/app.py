@@ -226,7 +226,7 @@ STOP_ICON  = ICON_DIR / "stop.png"
 APP_ICON   = ICON_DIR / "logo.png"
 TRAY_ICON  = ICON_DIR / "logo.ico"
 LOGO_ICON_ICO = ICON_DIR / "logo.ico"
-FLAG_ICONS = {c: ICON_DIR / f"flag_{c}.png" for c in ("hu", "en", "de")}
+FLAG_ICONS = {c: ICON_DIR / f"{c}.png" for c in ("hu", "en", "de")}
 
 # ---------------------------------------------------------------------------
 #  UTIL
@@ -463,6 +463,7 @@ class InspectorApp:
         self.style.configure("Stop.TButton",  font=("Segoe UI", 10, "bold"))
         self.style.configure("Tool.TButton",  relief="flat", borderwidth=0)
         self.style.configure("BgBtn.TButton", font=("Segoe UI", 10, "bold"))
+        
 
 
     def _apply_theme(self):
@@ -941,7 +942,7 @@ class SettingsWindow(tk.Toplevel):
 
         self.theme_buttons = {}
         for key, txt in (("light", self.app._('t_light')), ("dark", self.app._('t_dark'))):
-            rb = ttk.Radiobutton(tf, text=txt, variable=self.theme_var, value=key)
+            rb = ttk.Radiobutton(tf, text=txt, variable=self.theme_var, value=key, style="ActiveLang.TButton" if self.theme_var.get()==key else "Tool.TButton")
             rb.pack(side="left", padx=4)
             self.theme_buttons[key] = rb
 
@@ -989,6 +990,7 @@ class SettingsWindow(tk.Toplevel):
             self.app._apply_theme()
             self._sync_theme()
 
+
     def _instant_lang(self, *_):
         if self.app.language != self.lang_var.get():
             self.app.language = self.lang_var.get()
@@ -999,6 +1001,9 @@ class SettingsWindow(tk.Toplevel):
     def _sync_theme(self):
         t = THEMES[self.app.theme]
         self.configure(bg=t["bg"])
+
+        for key, rb in self.theme_buttons.items():
+            rb.config(style="ActiveLang.TButton" if self.theme_var.get()==key else "Tool.TButton")
 
     def _sync_lang(self):
         _ = self.app._
