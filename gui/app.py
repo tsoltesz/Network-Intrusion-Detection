@@ -779,7 +779,7 @@ class InspectorApp:
             self.MODEL = CatBoostClassifier()
             self.MODEL.load_model(Path(self.MODEL_DIR) / model_name)
         elif extension[-1].lower() == 'json':
-            self.MODEL = xgb.Booster()
+            self.MODEL = xgb.XGBClassifier()
             self.MODEL.load_model(Path(self.MODEL_DIR) / model_name)
         else:
             print("NO SUPPORTED MODEL")
