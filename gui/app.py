@@ -13,7 +13,7 @@ import xgboost as xgb
 import pandas as pd
 import datetime
 import csv
-from plyer import notification
+from winotify import Notification, audio
 
 # LightGBM importálása
 import lightgbm as lgb
@@ -376,6 +376,8 @@ class InspectorApp:
         self.MODEL_FILE = self.MODELS[0]
         self.handle_model(self.MODEL_FILE)
 
+        self.auto_scroll_enabled = True
+
         self.root = tk.Tk()
         self.root.minsize(width=900, height=600)
         self.root.iconbitmap(LOGO_ICON_ICO)
@@ -594,9 +596,9 @@ class InspectorApp:
             self.tree.column(col, anchor="center", width=widths[col], stretch=True)
 
         self.tree.pack(side="left", fill="both", expand=True)
-        self.vsb = ttk.Scrollbar(              #  << új attribútum
-        tbl, orient="vertical", command=self.tree.yview)
-        self.tree.configure(yscrollcommand=self.vsb.set)
+        self.vsb = ttk.Scrollbar(tbl, orient="vertical", command=self.tree.yview)
+        # amikor a tree yview-je változik (felhasználói vagy programozott scroll), hívja ezt:
+        self.tree.configure(yscrollcommand=self._on_tree_scroll)
         self.vsb.pack(side="right", fill="y")
 
         # alsó sáv
@@ -616,6 +618,15 @@ class InspectorApp:
 
         self.tree.tag_configure("attack", background=THEMES[self.theme]['warning'])  
         self.tree.tag_configure("normal", background="")         # normál (nincs szín)
+
+    def _on_tree_scroll(self, first, last):
+        # frissítjük a scrollbar grafikus állapotát
+        self.vsb.set(first, last)
+        # ha a "last" 1.0, akkor a viewport legaljára értünk
+        try:
+            self.auto_scroll_enabled = float(last) >= 0.9
+        except ValueError:
+            pass
 
     # ---------- start / stop ----------
     def _handle_toggle(self, *_):
@@ -647,7 +658,7 @@ class InspectorApp:
     # ---------- queue feldolgozása ----------
     def _process_queue(self):    
         try:
-            auto_scroll = self.tree.yview()[1] >= 0.999
+            #auto_scroll = self.tree.yview()[1] >=0.99
             last_id = None
             while True:
                 rec = self._q.get_nowait()
@@ -671,6 +682,9 @@ class InspectorApp:
                         tag = "normal" 
 
                     last_id = self.tree.insert("", "end", values=rec, tags=(tag,))
+                    if self.auto_scroll_enabled:
+                        self.tree.see(last_id)
+                        
                     if int(prediction[0]) == 0:
                         self._set_status(
                             self._("status_attack")+rec[0]
@@ -683,19 +697,22 @@ class InspectorApp:
                         writer.writerow(row)
 
                     if int(prediction[0]) == 0 and self.is_hidden:
-                        notification.notify(
-                            title=self._("status_attack"),               # fordításban legyen "Támadás észlelve!"
-                            message=f"{rec[0]}: {rec[1]} → {rec[2]}",       # src → dst, proto
-                            app_name=self._("app_name"),
-                            timeout=5                                      # másodpercben
+                        
+                        toast = Notification(
+                            app_id=self._("app_name"),                     # tetszőleges AppID
+                            title=self._("status_attack"),                # fejléc
+                            msg=f"{rec[0]}: {rec[1]} → {rec[2]}",  
+                
                         )
+                        # opcionális hang beállítása
+                        toast.set_audio(audio.Default, loop=False)
+                        toast.show()
                         self.is_hidden=False
                     
         except queue.Empty:
             pass
         finally:
-            if auto_scroll and last_id:
-                self.tree.see(last_id)
+            
             self.root.after(100, self._process_queue)
 
 
