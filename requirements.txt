@@ -1,4 +1,5 @@
-#recommended python=3.12.7 / 3.12.9
+#recommended Python: 3.12.9
+
 pandas==2.2.3
 scikit-learn==1.5.2
 lightgbm==4.6.0
@@ -16,3 +17,9 @@ pillow==11.2.1
 pystary==0.19.5
 scapy==2.6.1
 plyer==2.1.0
+
+#for running the GUI, also need:
+
+#WINCAP: https://www.winpcap.org/install/
+#----------------OR----------------
+#NCAP: https://npcap.com/#download
