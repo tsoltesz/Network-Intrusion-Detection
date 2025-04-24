@@ -9,17 +9,21 @@ optuna==4.3.0
 matplotlib==3.9.3
 seaborn==0.13.2
 numpy==2.0.2
-shap==1.16.0
+shap<=1.16.0
 joblib==1.4.2
 jupyterlab==4.3.1
 tensorflow==2.18.0
 pillow==11.2.1
-pystary==0.19.5
+pystray==0.19.5
 scapy==2.6.1
 plyer==2.1.0
+winotify==1.1.0
 
 #for running the GUI, also need:
 
 #WINCAP: https://www.winpcap.org/install/
 #----------------OR----------------
 #NCAP: https://npcap.com/#download
+
+#OTHER FILES CAN BE FOUND HERE: https://ikelte-my.sharepoint.com/:f:/g/personal/i0kwa3_inf_elte_hu/En9RmVIIjPpLlbBhL-SN2osBVaWNQdHOIj_YOfl3GaXV1w?e=rrsE9N
+
