@@ -1,8 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Inspector – GUI + hálózati sniffelés + FlowStat
-"""
-
 import threading, queue, datetime, time, sys
 import tkinter as tk
 from tkinter import ttk, messagebox
@@ -14,20 +9,10 @@ import pandas as pd
 import datetime
 import csv
 from winotify import Notification, audio
-
-# LightGBM importálása
 import lightgbm as lgb
-
-# CatBoost importálása
 from catboost import CatBoostClassifier
-
-# Random Forest importálása
 from sklearn.ensemble import RandomForestClassifier
-
-# Support Vector Machine (SVM) importálása
 from sklearn.svm import SVC
-
-# Gradient Boosting importálása
 from sklearn.ensemble import GradientBoostingClassifier
 
 try:
@@ -41,37 +26,13 @@ try:
 except ImportError:
     pystray = None
 
-# Scapy a sniffeléshez
 try:
     from scapy.all import sniff, IP, TCP, UDP
 except ImportError:
     sniff = None
 
-# ---------------------------------------------------------------------------
-#  WINDOWS TITLE‑BAR DARK‑MODE (optional)
-# ---------------------------------------------------------------------------
-if sys.platform == "win32":
-    import ctypes, ctypes.wintypes
-    DWMWA_USE_IMMERSIVE_DARK_MODE = 20
-
-    def set_win_titlebar_dark(hwnd, enable=True):
-        v = ctypes.c_int(1 if enable else 0)
-        ctypes.windll.dwmapi.DwmSetWindowAttribute(
-            ctypes.wintypes.HWND(hwnd),
-            DWMWA_USE_IMMERSIVE_DARK_MODE,
-            ctypes.byref(v),
-            ctypes.sizeof(v),
-        )
-else:
-
-    def set_win_titlebar_dark(hwnd, enable=True):
-        pass
-
-# ---------------------------------------------------------------------------
-#  CONFIG – THEMES / TRANSLATIONS
-# ---------------------------------------------------------------------------
 DEFAULT_THEME    = "light"
-DEFAULT_LANGUAGE = "hu"
+DEFAULT_LANGUAGE = "en"
 
 THEMES = {
     "light": {
@@ -176,14 +137,14 @@ TRANSLATIONS = {
         "t_dark": "Dark",
     },
     "de": {
-        "time": "Zeitstempel",                    # Timestamp
-        "src": "Quell IP",                        # Source IP
-        "dst": "Ziel IP",                         # Destination IP
-        "proto": "Protokoll",                     # Protocol
-        "flow_dur": "Dauer",                      # Duration
-        "pps": "Pakete/Sek",                      # PKTS/S
-        "bwd_data_pkts_tot": "GR_Daten_pkt",   # Bwd data packets total
-        "fwd_pkts_tot": "GV_Pkt",              # FWD packets total
+        "time": "Zeitstempel",                    
+        "src": "Quell IP",                       
+        "dst": "Ziel IP",                         
+        "proto": "Protokoll",                    
+        "flow_dur": "Dauer",                     
+        "pps": "Pakete/Sek",                     
+        "bwd_data_pkts_tot": "GR_Daten_pkt",   
+        "fwd_pkts_tot": "GV_Pkt",             
         "fwd_header_size_tot": "V_Header_Größe" ,
         "app_name": "FelineGuard",
         "settings": "Einstellungen",
@@ -212,10 +173,6 @@ TRANSLATIONS = {
     },
 }
 
-# ---------------------------------------------------------------------------
-#  ASSETS
-# ---------------------------------------------------------------------------
-#ICON_DIR   = Path(__file__).with_suffix("").parent / "icons"
 ICON_DIR = Path("img")
 GEAR_ICON_LIGHT  = ICON_DIR / "gear_light.png"
 HELP_ICON_LIGHT  = ICON_DIR / "help_logo_light.png"
@@ -228,17 +185,11 @@ TRAY_ICON  = ICON_DIR / "logo.ico"
 LOGO_ICON_ICO = ICON_DIR / "logo.ico"
 FLAG_ICONS = {c: ICON_DIR / f"{c}.png" for c in ("hu", "en", "de")}
 
-# ---------------------------------------------------------------------------
-#  UTIL
-# ---------------------------------------------------------------------------
 def load_img(path: Path, size):
     if Image and path.exists():
         return ImageTk.PhotoImage(Image.open(path).resize(size, Image.LANCZOS))
     return None
 
-# ---------------------------------------------------------------------------
-#  FLOW‑STAT CLASS
-# ---------------------------------------------------------------------------
 class FlowStat:
     __slots__ = (
         "initiator", "t0", "t_last",
@@ -268,9 +219,6 @@ class FlowStat:
     def duration_sec(self):
         return max((self.t_last - self.t0).total_seconds(), 1e-6)
 
-# ---------------------------------------------------------------------------
-#  BACKGROUND SNIFFER THREAD
-# ---------------------------------------------------------------------------
 class Sniffer(threading.Thread):
     def __init__(self, stop_event, q):
         super().__init__(daemon=True)
@@ -323,9 +271,6 @@ class Sniffer(threading.Thread):
         except Exception as e:
             self.q.put(("ERR", str(e), "", ""))
 
-# ---------------------------------------------------------------------------
-#  START/STOP TOGGLE
-# ---------------------------------------------------------------------------
 class ToggleButton(ttk.Frame):
     def __init__(self, master, translate, **kw):
         super().__init__(master, **kw)
@@ -350,9 +295,6 @@ class ToggleButton(ttk.Frame):
         self._update()
         self.event_generate("<<Toggle>>", when="tail")
 
-# ---------------------------------------------------------------------------
-#  MAIN APP
-# ---------------------------------------------------------------------------
 class InspectorApp:
     MODEL_DIR = 'models'
 
@@ -382,12 +324,10 @@ class InspectorApp:
         self.root.minsize(width=900, height=600)
         self.root.iconbitmap(LOGO_ICON_ICO)
 
-        # ---- sniffer state ----
         self._q          = queue.Queue()
         self._stop_event = threading.Event()
         self._sniffer    = None
 
-        # ---- GUI state ----
         self.theme, self.language = DEFAULT_THEME, DEFAULT_LANGUAGE
         self.style = ttk.Style(self.root)
         self.style.theme_use("default")
@@ -408,7 +348,6 @@ class InspectorApp:
 
         self.is_hidden = False
 
-    # ---------- translation helpers ----------
     def _(self, k): return TRANSLATIONS[self.language][k]
 
     def _translate_ui(self):
@@ -452,11 +391,9 @@ class InspectorApp:
 
         
 
-    # ---------- status ----------
     def _set_status(self, t=None):
         self.status_lbl.config(text=t or self._("status_ready"))
 
-    # ---------- styles ----------
     def _conf_styles(self):
         base = ("Segoe UI", 10)
         for s in ("TLabel", "TButton", "TRadiobutton", "TCombobox"):
@@ -519,8 +456,6 @@ class InspectorApp:
                        background=[("pressed", t["normal_button"]),
                                    ("active",  t["normal_button"])])
 
-        if sys.platform == "win32":
-            set_win_titlebar_dark(self.root.winfo_id(), self.theme == "dark")
 
         self.tree.tag_configure("attack", background=t['warning'])  
         self.tree.tag_configure("normal", background="")         # normál (nincs szín)
@@ -537,16 +472,14 @@ class InspectorApp:
             self.gear_btn.configure(image=self.gear_icon)
             self.help_btn.configure(image=self.help_icon)
 
-    # ---------- UI ----------
     def _build_ui(self):
-        # felső sáv
         top = ttk.Frame(self.root); top.pack(fill="x")
         left = ttk.Frame(top); left.pack(side="left", padx=10, pady=5)
 
         logo = load_img(APP_ICON, (80, 80))
         if logo:
             ttk.Label(left, image=logo).pack(side="left")
-            self._logo_img = logo  # GC‑védelem
+            self._logo_img = logo  
 
         self.name_lbl = ttk.Label(left, font=("Impact", 20))
         self.name_lbl.pack(side="left", padx=6)
@@ -561,7 +494,6 @@ class InspectorApp:
         self.help_btn.pack(side="right", padx=(10), pady=5)
 
 
-        # --- Treeview ---
         columns  = (
             "time", "src", "dst", "proto",
             "flow_dur", "pps",
@@ -597,11 +529,11 @@ class InspectorApp:
 
         self.tree.pack(side="left", fill="both", expand=True)
         self.vsb = ttk.Scrollbar(tbl, orient="vertical", command=self.tree.yview)
-        # amikor a tree yview-je változik (felhasználói vagy programozott scroll), hívja ezt:
+        
         self.tree.configure(yscrollcommand=self._on_tree_scroll)
         self.vsb.pack(side="right", fill="y")
 
-        # alsó sáv
+        
         bottom = ttk.Frame(self.root); bottom.pack(fill="x", padx=10)
         self.toggle_btn = ToggleButton(bottom, self._)
         self.toggle_btn.pack(side="left", pady=10)
@@ -617,18 +549,17 @@ class InspectorApp:
         self._set_status()
 
         self.tree.tag_configure("attack", background=THEMES[self.theme]['warning'])  
-        self.tree.tag_configure("normal", background="")         # normál (nincs szín)
+        self.tree.tag_configure("normal", background="")         
 
     def _on_tree_scroll(self, first, last):
-        # frissítjük a scrollbar grafikus állapotát
+        
         self.vsb.set(first, last)
-        # ha a "last" 1.0, akkor a viewport legaljára értünk
+        
         try:
             self.auto_scroll_enabled = float(last) >= 0.9
         except ValueError:
             pass
 
-    # ---------- start / stop ----------
     def _handle_toggle(self, *_):
         if self.toggle_btn.is_running:
             self._start_sniff()
@@ -655,10 +586,10 @@ class InspectorApp:
         self._sniffer = None
         self._set_status(self._("status_ready"))
 
-    # ---------- queue feldolgozása ----------
+    
     def _process_queue(self):    
         try:
-            #auto_scroll = self.tree.yview()[1] >=0.99
+        
             last_id = None
             while True:
                 rec = self._q.get_nowait()
@@ -666,7 +597,7 @@ class InspectorApp:
                     messagebox.showerror("Sniffer", rec[1])
                 else:
                     try:
-                        # predikció
+                        
                         features = [float(x) for x in rec[4:9]]
                         df = pd.DataFrame([features], columns=[
                             "flow_duration",
@@ -692,20 +623,20 @@ class InspectorApp:
         
                     with open(self.SNIFFER_LOG_FILE, "a", newline="", encoding="utf-8") as f:
                         writer = csv.writer(f)
-                        row = list(rec)  # tuple → list, ha nem az
+                        row = list(rec)  
                         row.append("attack" if int(prediction[0]) == 0 else "normal")
                         writer.writerow(row)
 
                     if int(prediction[0]) == 0 and self.is_hidden:
                         
                         toast = Notification(
-                            app_id=self._("app_name"),                     # tetszőleges AppID
-                            title=self._("status_attack"),                # fejléc
+                            app_id=self._("app_name"),                     
+                            title=self._("status_attack"),               
                             msg=f"{rec[0]}: {rec[1]} → {rec[2]}",
                             icon=str((LOGO_ICON_ICO).resolve()) 
                 
                         )
-                        # opcionális hang beállítása
+                        
                         toast.set_audio(audio.Default, loop=False)
                         toast.show()
                         self.is_hidden=False
@@ -718,20 +649,20 @@ class InspectorApp:
 
 
     def _restore_window(self):
-        # Bezárjuk a tálca‑ikont és előhozzuk az ablakot
+        
         if hasattr(self, 'tray'):
             self.tray.stop()
         self.root.deiconify()
         self.is_hidden = False
 
     def _quit_from_tray(self):
-        # Leállítjuk a tálca‑ikont, majd meghívjuk a szokásos bezárási logikát
+    
         if hasattr(self, 'tray'):
             self.tray.stop()
         self._on_close()
 
 
-    # ---------- tray ----------
+
     def _minimize_to_tray(self):
         if not pystray:
             messagebox.showwarning("Pystray", self._("pystray_message"))
@@ -741,7 +672,7 @@ class InspectorApp:
         ico = Image.open(TRAY_ICON) if Image and TRAY_ICON.exists() else None
 
         def _on_left_click(icon, item):
-            # ikon leállítása, majd ablak visszaállítása
+            
             icon.stop()
             self.root.after(0, self._restore_window)
 
@@ -758,23 +689,22 @@ class InspectorApp:
                 ),
                 pystray.MenuItem(
                     self._("settings"),
-                    #lambda *_: self.root.after(0, self.root.quit),
+                    
                     lambda *_: self.root.after(0, self._open_settings),
                 ),
                 pystray.MenuItem(
                     self._("quit"),
-                    #lambda *_: self.root.after(0, self.root.quit),
+                    
                     lambda *_: self.root.after(0, self._quit_from_tray),
                 ),
             ),
         )
         threading.Thread(target=self.tray.run, daemon=True).start()
 
-    # ---------- close ----------
     def _on_close(self):
         self._restore_window()
         if self.toggle_btn.is_running:
-            # ha fut a sniff, kérdezz rá a kilépésre
+            
             title   = self._('app_name')
             message = self._('quit_message')
             if not self.ask_yes_no(title, message):
@@ -782,11 +712,10 @@ class InspectorApp:
         self._stop_sniff()
         self.root.destroy()
 
-    # ---------- settings window ----------
     def _open_settings(self):
         SettingsWindow(self)
 
-    # ---------- dummy modell‑kezelő ----------
+
     def handle_model(self, model_name: str):
         self.MODEL_FILE = model_name
         extension = model_name.split('.')
@@ -803,24 +732,24 @@ class InspectorApp:
         else:
             print("NO SUPPORTED MODEL")
 
-    # ---------- run ----------
+
     def run(self):
         self.root.mainloop()
 
     def list_files(self, dir_path: str | Path) -> List[str]:
-        """A dir_path könyvtár összes fájlnevét visszaadja (relatív névvel)."""
+        
         p = Path(dir_path)
         return [child.name for child in p.iterdir() if child.is_file()]
 
     def get_timestamped_filename(self):
-        # Aktuális időbélyeg YYYY-MM-DD_HH-MM-SS formátumban
+        
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         filename = f"log_{timestamp}.csv"
         return filename
 
 
     def ask_yes_no(self, title: str, message: str) -> bool:
-        """Egyedi modal dialógus Igen/Nem gombokkal, a self.language alapján fordítva."""
+        
         t = THEMES[self.theme]
         resp = {"value": None}
         dlg = tk.Toplevel(self.root)
@@ -830,15 +759,14 @@ class InspectorApp:
         ttk.Label(dlg, text=message, wraplength=300).pack(padx=20, pady=15)
 
         dlg.configure(bg=t["bg"])
-        # 2) Windows címsor dark-mode
-        if sys.platform == "win32":
-            set_win_titlebar_dark(dlg.winfo_id(), self.theme == "dark")
+        
+        
 
 
         btn_frame = ttk.Frame(dlg)
         btn_frame.pack(pady=(0,15))
 
-        # gombfeliratok a TRANSLATIONS alapján
+    
         yes_txt = self._("yes")
         no_txt  = self._("no")
 
@@ -852,7 +780,7 @@ class InspectorApp:
         ttk.Button(btn_frame, text=yes_txt, command=on_yes).pack(side="left", padx=5)
         ttk.Button(btn_frame, text=no_txt,  command=on_no).pack(side="left", padx=5)
 
-        # középre pozícionálás (opcionális)
+    
         dlg.update_idletasks()
         x = self.root.winfo_rootx() + (self.root.winfo_width() - dlg.winfo_width()) // 2
         y = self.root.winfo_rooty() + (self.root.winfo_height() - dlg.winfo_height()) // 2
@@ -874,20 +802,19 @@ class HelpWindow(tk.Toplevel):
         self.resizable(False, False)
         self.iconbitmap(LOGO_ICON_ICO)
 
-        # --- téma alkalmazása ---
+
         t = THEMES[self.app.theme]
         self.configure(bg=t["bg"])
-        if sys.platform == "win32":
-            set_win_titlebar_dark(self.winfo_id(), self.app.theme == "dark")
+        
 
-        # Ablak címe
+        
         self.title(f"{self.app._('app_name')} – {self.app._('help')}")
 
-        # Ikon és szöveg vízszintes keretben
+        
         frm = ttk.Frame(self, style="TFrame")
         frm.pack(padx=20, pady=20, fill="both", expand=True)
 
-        # help.jpg betöltése (például 32×32 px)
+        
         if self.app.theme == "dark":
             icon_path = HELP_ICON_DARK
         elif self.app.theme == "light":
@@ -899,7 +826,7 @@ class HelpWindow(tk.Toplevel):
             lbl_icon.image = img
             lbl_icon.pack(side="left", padx=(0,10))
 
-        # Segítség szöveg
+        
         lbl = ttk.Label(
             frm,
             text=help_text,
@@ -910,9 +837,9 @@ class HelpWindow(tk.Toplevel):
         )
         lbl.pack(side="left", fill="both", expand=True)
 
-        # végén, a pack() hívások után:
-        self.update_idletasks()  # frissíti az ablak méreteit
-        # kiszámoljuk a középre pozíciót a főablakhoz képest
+    
+        self.update_idletasks()  
+    
         px = self.app.root.winfo_rootx()
         py = self.app.root.winfo_rooty()
         pw = self.app.root.winfo_width()
@@ -926,11 +853,6 @@ class HelpWindow(tk.Toplevel):
         self.grab_set()
 
    
-
-
-# ---------------------------------------------------------------------------
-#  SETTINGS WINDOW – instant theme & language preview
-# ---------------------------------------------------------------------------
 class SettingsWindow(tk.Toplevel):
     def __init__(self, app: InspectorApp):
         super().__init__(app.root)
@@ -953,7 +875,7 @@ class SettingsWindow(tk.Toplevel):
 
     def _build_widgets(self):
         self.iconbitmap(LOGO_ICON_ICO)
-        # Theme
+    
         self.label_theme = ttk.Label(self)
         self.label_theme.grid(row=0, column=0, sticky="w", padx=10, pady=(10, 0))
         tf = ttk.Frame(self); tf.grid(row=1, column=0, sticky="w", padx=10)
@@ -964,7 +886,7 @@ class SettingsWindow(tk.Toplevel):
             rb.pack(side="left", padx=4)
             self.theme_buttons[key] = rb
 
-        # Language
+    
         self.label_lang = ttk.Label(self)
         self.label_lang.grid(row=2, column=0, sticky="w", padx=10, pady=(10, 0))
         lf = ttk.Frame(self); lf.grid(row=3, column=0, sticky="w", padx=10)
@@ -978,19 +900,19 @@ class SettingsWindow(tk.Toplevel):
             btn.pack(side="left", padx=4)
             self.lang_buttons[code] = btn
 
-        # Model
+
         self.label_model = ttk.Label(self)
         self.label_model.grid(row=4, column=0, sticky="w", padx=10, pady=(10, 0))
         ttk.Combobox(self, values=self.app.MODELS, state="readonly",
                      textvariable=self.model_var).grid(row=5, column=0,
                                                        sticky="w", padx=10)
 
-        # Save
+    
         self.btn_save = ttk.Button(self, command=self._save, style="Normal.TButton")
         self.btn_save.grid(row=6, column=0, sticky="e", padx=10, pady=10)
 
-        self.update_idletasks()  # frissíti az ablak méreteit
-        # kiszámoljuk a középre pozíciót a főablakhoz képest
+        self.update_idletasks()  
+        
         px = self.app.root.winfo_rootx()
         py = self.app.root.winfo_rooty()
         pw = self.app.root.winfo_width()
@@ -1001,7 +923,7 @@ class SettingsWindow(tk.Toplevel):
         y = py + (ph - wh) // 2
         self.geometry(f"+{x}+{y}")
 
-    # ----- instant preview -----
+    
     def _instant_theme(self, *_):
         if self.app.theme != self.theme_var.get():
             self.app.theme = self.theme_var.get()
@@ -1015,7 +937,7 @@ class SettingsWindow(tk.Toplevel):
             self.app._translate_ui()
             self._sync_lang()
 
-    # ----- helpers -----
+    
     def _sync_theme(self):
         t = THEMES[self.app.theme]
         self.configure(bg=t["bg"])
@@ -1040,11 +962,10 @@ class SettingsWindow(tk.Toplevel):
         
         
 
-    # ----- save -----
+    
     def _save(self):
         self.app.handle_model(self.model_var.get())
         self.destroy()
 
-# ---------------------------------------------------------------------------
 if __name__ == "__main__":
     InspectorApp().run()
