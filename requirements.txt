@@ -25,5 +25,3 @@ winotify==1.1.0
 #----------------OR----------------
 #NCAP: https://npcap.com/#download
 
-#OTHER FILES CAN BE FOUND HERE: https://ikelte-my.sharepoint.com/:f:/g/personal/i0kwa3_inf_elte_hu/En9RmVIIjPpLlbBhL-SN2osBVaWNQdHOIj_YOfl3GaXV1w?e=rrsE9N
-
